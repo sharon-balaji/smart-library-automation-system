@@ -1,0 +1,2364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LIB-NEXUS | Smart Library System</title>
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --accent: #2563eb;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #0f172a;
+            --danger: #dc2626;
+            
+            --success: #16a34a;
+            --warning: #d97706;
+            --sidebar: linear-gradient(180deg, #0f172a, #172554);
+            --sidebar-text: #e2e8f0;
+            --sidebar-muted: #94a3b8;
+        }
+
+        body[data-theme="dark"] {
+            --bg: #020617;
+            --card-bg: #0f172a;
+            --text: #e2e8f0;
+            --primary: #93c5fd;
+            --accent: #60a5fa;
+            --sidebar: linear-gradient(180deg, #020617, #0f172a);
+            --sidebar-text: #e2e8f0;
+            --sidebar-muted: #94a3b8;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; }
+        html { scroll-behavior: smooth; }
+        body { background: var(--bg); color: var(--text); overflow-x: hidden; transition: background 220ms ease, color 220ms ease; }
+
+        .login-card, .sidebar, .topbar, .hero, .settings-panel, .about-panel, .account-panel, .popular-books-panel,
+        .book-card, .stat-card, .request-card, .mini-stat, .account-card, .about-card, .nav-item, .btn,
+        .theme-toggle, .theme-choice, .search-pill, .new-arrival-bar, .popular-book-card {
+            will-change: transform, box-shadow, filter;
+            transition: transform 220ms cubic-bezier(.2,.8,.2,1), box-shadow 220ms cubic-bezier(.2,.8,.2,1),
+                        border-color 220ms ease, background 220ms ease, filter 220ms ease;
+        }
+
+        .login-card, .sidebar, .topbar, .hero, .settings-panel, .about-panel, .account-panel, .popular-books-panel {
+            animation: panelIn 560ms cubic-bezier(.2,.8,.2,1) both;
+        }
+
+        @keyframes panelIn {
+            from { opacity: 0; transform: translateY(10px) scale(0.985); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* Intro Slide */
+        #intro-slide {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: #090d16;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            z-index: 9999;
+            transition: opacity 1s ease-out, visibility 1s ease-out;
+        }
+
+        .glow-circle {
+            position: absolute;
+            width: 350px; height: 350px;
+            background: radial-gradient(circle, rgba(37,99,235,0.4) 0%, rgba(0,0,0,0) 70%);
+            animation: pulseGlow 3s infinite alternate ease-in-out;
+        }
+
+        @keyframes pulseGlow {
+            0% { transform: scale(0.8); opacity: 0.5; }
+            100% { transform: scale(1.2); opacity: 0.9; }
+        }
+
+        .title-container { position: relative; z-index: 2; text-align: center; }
+
+        .animated-title {
+            font-size: 4rem; font-weight: 900;
+            letter-spacing: 0.5rem; color: #ffffff;
+            text-transform: uppercase; display: inline-block;
+            overflow: hidden; white-space: nowrap;
+            border-right: 4px solid var(--accent);
+            animation: 
+                typing 2s steps(9, end) forwards,
+                blinkCaret 0.75s step-end infinite alternate,
+                glowText 2s ease-in-out 2s infinite alternate;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: #94a3b8; font-size: 1.1rem;
+            letter-spacing: 0.2rem; opacity: 0;
+            transform: translateY(15px);
+            animation: fadeInUp 1s ease-out 1.8s forwards;
+            text-transform: uppercase;
+        }
+
+        .logout-overlay {
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(circle at top, rgba(56, 189, 248, 0.26), transparent 30%),
+                radial-gradient(circle at bottom, rgba(37, 99, 235, 0.22), transparent 32%),
+                linear-gradient(160deg, #020617 0%, #0f172a 50%, #111827 100%);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            padding: 1.5rem;
+            overflow: hidden;
+        }
+
+        .logout-overlay.active {
+            display: flex;
+            animation: overlayPulse 0.5s ease forwards;
+        }
+
+        @keyframes overlayPulse {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .logout-scene {
+            position: relative;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.3rem;
+            width: min(90vw, 800px);
+            padding: 1rem 0 0.5rem;
+        }
+
+        .logout-scene::before {
+            content: "";
+            position: absolute;
+            top: 8%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: clamp(280px, 60vw, 520px);
+            height: clamp(280px, 60vw, 520px);
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(96, 165, 250, 0.35), transparent 65%);
+            filter: blur(8px);
+            z-index: 0;
+            animation: sceneGlow 4s ease-in-out infinite alternate;
+        }
+
+        .logout-scene::after {
+            content: "";
+            position: absolute;
+            top: 38%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: min(84vw, 520px);
+            height: min(84vw, 520px);
+            border-radius: 50%;
+            border: 1px solid rgba(96, 165, 250, 0.24);
+            box-shadow: 0 0 30px rgba(37, 99, 235, 0.28), inset 0 0 25px rgba(59, 130, 246, 0.16);
+            z-index: 0;
+            animation: ringPulse 3.2s ease-in-out infinite;
+        }
+
+        .library-building {
+            position: relative;
+            width: 360px;
+            height: 320px;
+            z-index: 2;
+            transform-origin: center bottom;
+            opacity: 0;
+            filter: drop-shadow(0 40px 75px rgba(37, 99, 235, 0.4));
+            animation: buildingEnter 1.8s cubic-bezier(.2,.8,.2,1) 0.15s forwards,
+                buildingFloat 4.8s ease-in-out 2.2s infinite;
+        }
+
+        .library-building::before {
+            content: "";
+            position: absolute;
+            top: 18px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 150px;
+            height: 24px;
+            background: linear-gradient(90deg, #f8fafc, #93c5fd 60%, #dbeafe);
+            clip-path: polygon(8% 100%, 92% 100%, 100% 0%, 0% 0%);
+            border-radius: 10px;
+            opacity: 0.98;
+            box-shadow: 0 0 18px rgba(147, 197, 253, 0.65);
+        }
+
+        .library-building::after {
+            content: "";
+            position: absolute;
+            inset: 46px 38px 30px;
+            border-radius: 22px;
+            background:
+                linear-gradient(180deg, rgba(29, 78, 216, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%);
+            box-shadow:
+                inset 0 0 0 2px rgba(255,255,255,0.14),
+                inset 0 -22px 35px rgba(8, 15, 32, 0.55),
+                0 18px 32px rgba(15, 23, 42, 0.45);
+        }
+
+        .library-window {
+            position: absolute;
+            width: 42px;
+            height: 46px;
+            background: linear-gradient(180deg, #fde68a, #f59e0b);
+            border-radius: 8px;
+            box-shadow: inset 0 0 0 2px rgba(15, 23, 42, 0.25), 0 0 18px rgba(251, 191, 36, 0.35);
+            animation: windowGlow 1.8s ease-in-out infinite alternate;
+        }
+
+        .library-window:nth-child(1) { top: 86px; left: 72px; }
+        .library-window:nth-child(2) { top: 86px; left: 126px; }
+        .library-window:nth-child(3) { top: 86px; left: 180px; }
+        .library-window:nth-child(4) { top: 146px; left: 72px; }
+        .library-window:nth-child(5) { top: 146px; left: 126px; }
+        .library-window:nth-child(6) { top: 146px; left: 180px; }
+
+        .library-door {
+            position: absolute;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 64px;
+            height: 104px;
+            border-radius: 18px 18px 0 0;
+            background: linear-gradient(180deg, #f8fafc, #93c5fd);
+            box-shadow: inset 0 0 0 2px rgba(15, 23, 42, 0.2), 0 0 18px rgba(147, 197, 253, 0.25);
+        }
+
+        @keyframes buildingEnter {
+            0% { opacity: 0; transform: translateY(40px) scale(0.25) rotate(-6deg); }
+            60% { opacity: 1; transform: translateY(-10px) scale(1.08) rotate(1.1deg); }
+            100% { opacity: 1; transform: translateY(0) scale(1) rotate(0deg); }
+        }
+
+        @keyframes buildingFloat {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-10px) scale(1.02); }
+        }
+
+        @keyframes windowGlow {
+            from { box-shadow: inset 0 0 0 2px rgba(15, 23, 42, 0.25), 0 0 12px rgba(251, 191, 36, 0.25); }
+            to { box-shadow: inset 0 0 0 2px rgba(15, 23, 42, 0.25), 0 0 28px rgba(251, 191, 36, 0.72); }
+        }
+
+        @keyframes sceneGlow {
+            from { transform: translateX(-50%) scale(0.92); opacity: 0.65; }
+            to { transform: translateX(-50%) scale(1.08); opacity: 0.95; }
+        }
+
+        @keyframes ringPulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(0.96); opacity: 0.55; }
+            50% { transform: translate(-50%, -50%) scale(1.03); opacity: 0.95; }
+        }
+
+        .logout-title {
+            position: relative;
+            z-index: 2;
+            font-size: clamp(2.8rem, 7vw, 4.8rem);
+            font-weight: 900;
+            letter-spacing: 0.45rem;
+            color: #ffffff;
+            text-transform: uppercase;
+            white-space: nowrap;
+            opacity: 0;
+            transform: translateY(24px) scale(0.82);
+            animation: logoutTitleReveal 1.1s cubic-bezier(.2,.9,.2,1) 2.1s forwards,
+                glowText 2.2s ease-in-out 2.5s infinite alternate;
+        }
+
+        @keyframes logoutTitleReveal {
+            from { opacity: 0; transform: translateY(24px) scale(0.82); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .logout-thanks {
+            font-size: 1.1rem;
+            letter-spacing: 0.18rem;
+            color: #dbeafe;
+            text-transform: uppercase;
+            opacity: 0;
+            transform: translateY(15px);
+            animation: fadeInUp 0.9s ease 3s forwards;
+        }
+
+        @keyframes typing { from { width: 0; } to { width: 100%; } }
+        @keyframes blinkCaret { from, to { border-color: transparent; } 50% { border-color: var(--accent); } }
+        @keyframes glowText {
+            from { text-shadow: 0 0 5px rgba(255,255,255,0.2), 0 0 10px rgba(37,99,235,0.3); }
+            to { text-shadow: 0 0 15px rgba(255,255,255,0.8), 0 0 30px rgba(37,99,235,0.8); }
+        }
+        @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
+
+        .intro-hidden { opacity: 0 !important; visibility: hidden !important; pointer-events: none; }
+
+        /* Header */
+        header {
+            background: var(--primary); color: white;
+            padding: 1rem 2rem; display: flex;
+            justify-content: space-between; align-items: center;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+
+        .user-info { display: flex; align-items: center; gap: 1rem; }
+        .user-badge { background: rgba(255, 255, 255, 0.15); padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.9rem; }
+
+        .btn-switch {
+            background: #fbbf24; color: #0f172a; border: none;
+            padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer;
+            font-weight: 700; transition: 0.2s;
+        }
+        .btn-switch:hover { background: #f59e0b; }
+
+        .btn-logout { background: var(--danger); color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; font-weight: 600; }
+
+        .container { max-width: 1400px; margin: 2rem auto; padding: 0 1rem; }
+
+        .dashboard-section {
+            padding: 1rem;
+            position: relative;
+            overflow: hidden;
+            isolation: isolate;
+            border-radius: 24px;
+            background:
+                radial-gradient(circle at top left, rgba(34, 211, 238, 0.78), transparent 20%),
+                radial-gradient(circle at top right, rgba(244, 114, 182, 0.72), transparent 24%),
+                radial-gradient(circle at bottom left, rgba(250, 204, 21, 0.7), transparent 20%),
+                radial-gradient(circle at bottom right, rgba(74, 222, 128, 0.72), transparent 22%),
+                linear-gradient(135deg, #0f172a 0%, #1d4ed8 55%, #0ea5e9 78%, #22c55e 100%);
+            background-size: 180% 180%;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.4), 0 0 0 1px rgba(255,255,255,0.05);
+            animation: dashboardGradientShift 9s ease-in-out infinite alternate;
+        }
+
+        .dashboard-section::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+                linear-gradient(120deg, rgba(255,255,255,0.18), transparent 40%, rgba(255,255,255,0.08)),
+                radial-gradient(circle at center, rgba(255,255,255,0.08), transparent 58%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        @keyframes dashboardGradientShift {
+            0% {
+                background-position: 0% 50%;
+                filter: saturate(1.18) brightness(0.95);
+            }
+            100% {
+                background-position: 100% 50%;
+                filter: saturate(1.3) brightness(1.02);
+            }
+        }
+
+        .app-shell {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            gap: 1.2rem;
+            min-height: 78vh;
+        }
+
+        .sidebar {
+            background: var(--sidebar);
+            border-radius: 18px;
+            padding: 1.25rem;
+            color: var(--sidebar-text);
+            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.14);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .sidebar-brand {
+            font-size: 1.25rem;
+            font-weight: 800;
+            letter-spacing: 0.12rem;
+            margin-bottom: 0.5rem;
+            color: #ffffff;
+            background: linear-gradient(90deg, #60a5fa, #34d399, #fbbf24, #fb7185);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: rainbowShift 6s linear infinite;
+        }
+
+        @keyframes rainbowShift {
+            0% { filter: hue-rotate(0deg); }
+            100% { filter: hue-rotate(360deg); }
+        }
+
+        .sidebar-status {
+            color: var(--sidebar-muted);
+            font-size: 0.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-list {
+            display: grid;
+            gap: 0.7rem;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.8rem 0.9rem;
+            border-radius: 10px;
+            color: var(--sidebar-text);
+            background: rgba(255,255,255,0.04);
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            text-align: left;
+            transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease;
+        }
+
+        .nav-item:hover {
+            transform: translateX(3px);
+            background: rgba(255,255,255,0.1);
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
+        }
+
+        .nav-item:active {
+            transform: scale(0.98);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, rgba(37,99,235,0.45), rgba(59,130,246,0.2));
+            color: #ffffff;
+            box-shadow: 0 10px 22px rgba(37,99,235,0.2);
+        }
+
+        .nav-item.logout-nav-item {
+            background: linear-gradient(135deg, rgba(127, 29, 29, 0.4), rgba(220, 38, 38, 0.25));
+            color: #fee2e2;
+            border: 1px solid rgba(248, 113, 113, 0.35);
+        }
+
+        .nav-item.logout-nav-item:hover {
+            background: linear-gradient(135deg, rgba(153, 27, 27, 0.56), rgba(220, 38, 38, 0.38));
+            box-shadow: 0 10px 22px rgba(220, 38, 38, 0.2);
+        }
+
+        .sidebar-settings {
+            margin-top: auto;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .settings-title {
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.12rem;
+            text-transform: uppercase;
+            color: var(--sidebar-muted);
+            margin-bottom: 0.75rem;
+        }
+
+        .theme-toggle {
+            width: 100%;
+            border: none;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.09);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.8rem;
+            padding: 0.8rem 0.9rem;
+            cursor: pointer;
+            transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .theme-toggle:hover {
+            transform: translateY(-2px);
+            background: rgba(255,255,255,0.14);
+            box-shadow: 0 10px 22px rgba(15,23,42,0.18);
+        }
+
+        .theme-toggle:active {
+            transform: scale(0.99);
+        }
+
+        .theme-toggle::after {
+            content: "";
+            position: absolute;
+            top: -40%;
+            left: -10%;
+            width: 120px;
+            height: 120px;
+            background: radial-gradient(circle, rgba(255,255,255,0.16), transparent 68%);
+            opacity: 0;
+            transition: opacity 180ms ease;
+        }
+
+        .theme-toggle:hover::after {
+            opacity: 1;
+        }
+
+        .theme-icon {
+            font-size: 1.1rem;
+            animation: themePulse 2.4s ease-in-out infinite;
+        }
+
+        @keyframes themePulse {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.12) rotate(12deg); }
+        }
+
+        .theme-label {
+            font-size: 0.88rem;
+            font-weight: 700;
+        }
+
+        .app-main {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255,255,255,0.85);
+            border: 1px solid rgba(148,163,184,0.25);
+            border-radius: 16px;
+            padding: 1rem 1.2rem;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
+        }
+
+        .new-arrival-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+            padding: 0.9rem 1rem;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #1d4ed8, #8b5cf6);
+            color: #ffffff;
+            box-shadow: 0 18px 45px rgba(37, 99, 235, 0.3);
+            border: 1px solid rgba(255,255,255,0.18);
+            overflow: hidden;
+            position: relative;
+            transform: translateY(-8px);
+            opacity: 0;
+            pointer-events: auto;
+            cursor: pointer;
+            transition: opacity 280ms ease, transform 280ms ease, filter 220ms ease, box-shadow 220ms ease;
+        }
+
+        .new-arrival-bar:hover {
+            transform: translateY(-4px) scale(1.01);
+            filter: saturate(1.15);
+            box-shadow: 0 24px 55px rgba(124, 58, 237, 0.42);
+        }
+
+        .new-arrival-bar:active {
+            transform: scale(0.995);
+        }
+
+        .new-arrival-bar.visible {
+            opacity: 1;
+            transform: translateY(0);
+            animation: arrivalGlow 1.2s ease-in-out infinite alternate, floatBanner 4s ease-in-out infinite;
+        }
+
+        .new-arrival-bar::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.24), transparent);
+            transform: translateX(-110%);
+            animation: arrivalSweep 2.2s linear infinite;
+        }
+
+        .arrival-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 2.3rem;
+            height: 2.3rem;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.18);
+            font-size: 1.1rem;
+            animation: bounceSpark 1.15s ease-in-out infinite alternate;
+        }
+
+        .arrival-text {
+            font-weight: 700;
+            letter-spacing: 0.02rem;
+            line-height: 1.4;
+            text-shadow: 0 2px 12px rgba(15, 23, 42, 0.35);
+        }
+
+        .arrival-text strong {
+            color: #fef08a;
+        }
+
+        @keyframes arrivalGlow {
+            from { box-shadow: 0 12px 28px rgba(37,99,235,0.22); }
+            to { box-shadow: 0 16px 42px rgba(168,85,247,0.44); }
+        }
+
+        @keyframes floatBanner {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-2px); }
+        }
+
+        @keyframes arrivalSweep {
+            from { transform: translateX(-110%); }
+            to { transform: translateX(110%); }
+        }
+
+        @keyframes bounceSpark {
+            from { transform: translateY(0) scale(1); }
+            to { transform: translateY(-3px) scale(1.06); }
+        }
+
+        .topbar-left h2 {
+            font-size: 1.1rem;
+            color: var(--primary);
+            margin-bottom: 0.2rem;
+        }
+
+        .topbar-left p {
+            color: #64748b;
+            font-size: 0.85rem;
+        }
+
+        .topbar-right {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .settings-panel {
+            background: var(--card-bg);
+            border: 1px solid rgba(148,163,184,0.25);
+            border-radius: 16px;
+            padding: 1.2rem;
+            box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
+            display: none;
+            margin-top: -0.2rem;
+        }
+
+        .settings-panel.active {
+            display: block;
+            animation: fadeInUp 0.35s ease;
+        }
+
+        .about-panel {
+            background: linear-gradient(135deg, rgba(255,255,255,0.96), rgba(241,245,249,0.97));
+            border: 1px solid rgba(148,163,184,0.25);
+            border-radius: 18px;
+            padding: 1.4rem;
+            box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
+            display: none;
+            margin-top: -0.2rem;
+        }
+
+        .about-panel.active {
+            display: block;
+            animation: fadeInUp 0.35s ease;
+        }
+
+        .account-panel {
+            background: linear-gradient(135deg, rgba(255,255,255,0.96), rgba(241,245,249,0.97));
+            border: 1px solid rgba(148,163,184,0.25);
+            border-radius: 18px;
+            padding: 1.4rem;
+            box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
+            display: none;
+            margin-top: -0.2rem;
+        }
+
+        .account-panel.active {
+            display: block;
+            animation: fadeInUp 0.35s ease;
+        }
+
+        .account-intro {
+            margin-bottom: 1.2rem;
+            padding: 1rem 1.1rem;
+            background: linear-gradient(135deg, #eff6ff, #ffffff);
+            border-radius: 14px;
+            border: 1px solid #dbeafe;
+        }
+
+        .account-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 0.95rem;
+        }
+
+        .account-card {
+            background: rgba(255,255,255,0.92);
+            border-radius: 14px;
+            border: 1px solid rgba(148,163,184,0.3);
+            padding: 1rem;
+            box-shadow: 0 10px 18px rgba(15, 23, 42, 0.05);
+        }
+
+        .account-label {
+            color: #64748b;
+            font-size: 0.82rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08rem;
+            margin-bottom: 0.45rem;
+        }
+
+        .account-card h4 {
+            color: var(--primary);
+            font-size: 1.08rem;
+        }
+
+        .about-intro {
+            margin-bottom: 1.2rem;
+            padding: 1rem 1.1rem;
+            background: linear-gradient(135deg, #eff6ff, #ffffff);
+            border-radius: 14px;
+            border: 1px solid #dbeafe;
+        }
+
+        .about-intro h3 {
+            color: var(--primary);
+            margin: 0.35rem 0 0.5rem;
+            font-size: 1.4rem;
+        }
+
+        .about-intro p {
+            color: #475569;
+            line-height: 1.7;
+        }
+
+        .about-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            background: rgba(37,99,235,0.1);
+            border: 1px solid rgba(37,99,235,0.2);
+            color: var(--primary);
+            font-weight: 700;
+            padding: 0.35rem 0.7rem;
+            border-radius: 999px;
+            font-size: 0.82rem;
+        }
+
+        .about-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 0.95rem;
+        }
+
+        .about-card {
+            background: rgba(255,255,255,0.92);
+            border-radius: 14px;
+            border: 1px solid rgba(148,163,184,0.3);
+            padding: 1rem;
+            box-shadow: 0 10px 18px rgba(15, 23, 42, 0.05);
+        }
+
+        .about-card h4 {
+            color: var(--primary);
+            margin-bottom: 0.45rem;
+        }
+
+        .about-card p, .about-card li {
+            color: #475569;
+            font-size: 0.92rem;
+            line-height: 1.6;
+        }
+
+        .about-card ul {
+            padding-left: 1rem;
+        }
+
+        .student-dashboard-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .student-main-column {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .popular-books-panel {
+            background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(239,246,255,0.98));
+            border: 1px solid rgba(148,163,184,0.3);
+            border-radius: 18px;
+            padding: 1rem;
+            box-shadow: 0 12px 20px rgba(15, 23, 42, 0.08);
+            position: sticky;
+            top: 1rem;
+        }
+
+        .popular-books-panel h3 {
+            color: var(--primary);
+            margin-bottom: 0.9rem;
+        }
+
+        .popular-book-list {
+            display: grid;
+            gap: 0.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .popular-book-card {
+            border: 1px solid rgba(148,163,184,0.3);
+            border-radius: 14px;
+            padding: 0.85rem;
+            background: #ffffff;
+            box-shadow: 0 8px 16px rgba(15, 23, 42, 0.05);
+            transition: transform 180ms ease, box-shadow 180ms ease;
+        }
+
+        .popular-book-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(15, 23, 42, 0.1);
+        }
+
+        .popular-book-card .btn {
+            width: 100%;
+            margin-top: 0.75rem;
+            padding: 0.62rem 0.9rem;
+            font-size: 0.84rem;
+        }
+
+        .popular-book-card h4 {
+            margin-bottom: 0.2rem;
+            color: var(--text);
+            font-size: 0.95rem;
+        }
+
+        .popular-book-card p {
+            color: #64748b;
+            font-size: 0.82rem;
+        }
+
+        .stars {
+            display: flex;
+            gap: 0.2rem;
+            margin-top: 0.65rem;
+        }
+
+        .star-btn {
+            border: none;
+            background: transparent;
+            font-size: 1.05rem;
+            cursor: pointer;
+            color: #cbd5e1;
+            transition: transform 150ms ease, color 150ms ease;
+        }
+
+        .star-btn:hover {
+            transform: scale(1.12);
+        }
+
+        .star-btn.active {
+            color: #f59e0b;
+        }
+
+        .rating-summary {
+            padding: 0.9rem;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #fef3c7, #fff7ed);
+            border: 1px solid #fcd34d;
+        }
+
+        .rating-summary strong {
+            display: block;
+            color: #b45309;
+            margin-bottom: 0.35rem;
+        }
+
+        .rating-summary span {
+            color: #7c2d12;
+            font-size: 0.82rem;
+        }
+
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 0.9rem;
+        }
+
+        .theme-choice {
+            border: 1px solid rgba(148,163,184,0.32);
+            background: linear-gradient(135deg, #f8fafc, #ffffff);
+            color: var(--text);
+            border-radius: 14px;
+            padding: 0.9rem 1rem;
+            cursor: pointer;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+        }
+
+        .theme-choice:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(15,23,42,0.08);
+            border-color: rgba(37,99,235,0.5);
+        }
+
+        .theme-choice.active {
+            border-color: var(--accent);
+            background: linear-gradient(135deg, #dbeafe, #eff6ff);
+            box-shadow: 0 10px 24px rgba(37,99,235,0.14);
+        }
+
+        .search-pill {
+            background: #eff6ff;
+            color: #1d4ed8;
+            border-radius: 999px;
+            padding: 0.55rem 0.9rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .stat-strip {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 1rem;
+        }
+
+        .mini-stat {
+            background: linear-gradient(135deg, #ffffff, #f8fbff);
+            border-radius: 14px;
+            padding: 1rem;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+            border: 1px solid #e2e8f0;
+        }
+
+        .mini-stat strong {
+            display: block;
+            font-size: 1.2rem;
+            color: var(--primary);
+        }
+
+        .mini-stat span {
+            color: #64748b;
+            font-size: 0.82rem;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: -20%;
+            pointer-events: none;
+            background:
+                radial-gradient(circle at 15% 15%, rgba(59, 130, 246, 0.22), transparent 20%),
+                radial-gradient(circle at 85% 15%, rgba(14, 165, 233, 0.18), transparent 24%),
+                radial-gradient(circle at 75% 80%, rgba(251, 191, 36, 0.18), transparent 28%);
+            filter: blur(12px);
+            animation: floatBg 18s ease-in-out infinite alternate;
+            z-index: -1;
+        }
+
+        @keyframes floatBg {
+            0% { transform: translate3d(0, 0, 0) scale(1); }
+            100% { transform: translate3d(2%, -3%, 0) scale(1.06); }
+        }
+
+        .hero::before {
+            content: "";
+            position: absolute;
+            inset: auto -60px -80px auto;
+            width: 240px;
+            height: 240px;
+            background: radial-gradient(circle, rgba(255,255,255,0.35), transparent 70%);
+            border-radius: 50%;
+            animation: orbFloat 6s ease-in-out infinite;
+        }
+
+        @keyframes orbFloat {
+            0%, 100% { transform: translateY(0) scale(1); opacity: 0.5; }
+            50% { transform: translateY(-18px) scale(1.08); opacity: 0.9; }
+        }
+
+        .dashboard-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: rgba(255,255,255,0.14);
+            border: 1px solid rgba(255,255,255,0.24);
+            padding: 0.35rem 0.7rem;
+            border-radius: 999px;
+            letter-spacing: 0.05rem;
+            font-size: 0.8rem;
+            margin-bottom: 0.7rem;
+            animation: pulseBadge 2.6s ease-in-out infinite;
+        }
+
+        @keyframes pulseBadge {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255,255,255,0.18); }
+            50% { box-shadow: 0 0 0 10px rgba(255,255,255,0.02); }
+        }
+
+        /* Login Screen */
+        #login-view { display: flex; justify-content: center; align-items: center; min-height: 75vh; }
+        .login-card {
+            background: var(--card-bg); padding: 2.5rem; border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08); width: 100%; max-width: 420px;
+            border: 1px solid #e2e8f0; animation: fadeInUp 0.8s ease-out;
+        }
+        .login-card h2 { color: var(--primary); margin-bottom: 0.5rem; text-align: center; }
+        .login-card p { color: #64748b; text-align: center; font-size: 0.9rem; margin-bottom: 1.5rem; }
+
+        .form-group { margin-bottom: 1.2rem; }
+        .form-group label { display: block; margin-bottom: 0.4rem; font-weight: 600; font-size: 0.9rem; }
+
+        input[type="text"], input[type="email"], input[type="number"], select {
+            width: 100%; padding: 0.75rem 1rem;
+            border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; outline: none;
+        }
+        input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2); }
+
+        /* Dashboard */
+        .hero {
+            background:
+                linear-gradient(135deg, rgba(15, 23, 42, 0.82), rgba(29, 78, 216, 0.58)),
+                url('https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat;
+            color: white;
+            padding: 2rem;
+            border-radius: 16px;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 18px 40px rgba(30, 58, 138, 0.24);
+            isolation: isolate;
+        }
+
+        .hero > div {
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(120deg, rgba(56, 189, 248, 0.14), transparent 55%, rgba(251, 191, 36, 0.16));
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .hero h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(90deg, #bfdbfe, #86efac, #fde68a, #f9a8d4);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradientGlow 4s ease-in-out infinite alternate;
+        }
+
+        @keyframes gradientGlow {
+            from { filter: hue-rotate(0deg) saturate(1); }
+            to { filter: hue-rotate(35deg) saturate(1.25); }
+        }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .stat-card {
+            background: rgba(255,255,255,0.92);
+            padding: 1.5rem;
+            border-radius: 14px;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+            border-left: 4px solid var(--accent);
+            position: relative;
+            overflow: hidden;
+            transition: transform 180ms ease, box-shadow 180ms ease;
+            transform: translateY(0);
+        }
+        .stat-card::after {
+            content: "";
+            position: absolute;
+            inset: auto -15px -15px auto;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(37,99,235,0.18), transparent 68%);
+        }
+        .stat-card h3 { font-size: 2rem; color: var(--primary); }
+        .stat-card p { color: #64748b; font-size: 0.9rem; }
+        .stat-card:hover, .book-card:hover, .request-card:hover {
+            transform: translateY(-4px) scale(1.01);
+            box-shadow: 0 14px 28px rgba(15, 23, 42, 0.12);
+        }
+
+        .filter-bar { display: flex; gap: 1rem; margin: 1rem 0; flex-wrap: wrap; }
+        .filter-bar input { flex: 2; min-width: 200px; }
+        .filter-bar select { flex: 1; min-width: 150px; }
+
+        .book-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
+
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6);
+            display: none; align-items: center; justify-content: center;
+            padding: 1rem; z-index: 1000;
+        }
+        .modal { background: white; width: min(450px, 100%); border-radius: 12px; padding: 1.5rem; box-shadow: 0 12px 28px rgba(0,0,0,0.2); }
+        .modal h3 { margin-bottom: 0.75rem; color: var(--primary); }
+        .modal-actions { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.25rem; }
+
+        .book-card {
+            background: rgba(255,255,255,0.96);
+            border-radius: 14px;
+            padding: 1.25rem;
+            box-shadow: 0 8px 18px rgba(15,23,42,0.06);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border: 1px solid #e2e8f0;
+            transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+            backdrop-filter: blur(8px);
+        }
+
+        .book-card:hover {
+            border-color: rgba(37,99,235,0.4);
+        }
+
+        .book-title-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
+        .book-cover-box {
+            width: 44px; height: 58px; background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+            border-radius: 4px; display: flex; align-items: center; justify-content: center;
+            color: #ffffff; font-size: 1.1rem; font-weight: bold; flex-shrink: 0;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.2); border-left: 3px solid #fbbf24;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: white;
+            border: none;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            margin-top: 1rem;
+            transition: transform 180ms cubic-bezier(.2,.8,.2,1), box-shadow 180ms cubic-bezier(.2,.8,.2,1), opacity 180ms ease;
+            width: 100%;
+            box-shadow: 0 8px 20px rgba(37,99,235,0.24);
+            position: relative;
+            overflow: hidden;
+        }
+        .btn:hover {
+            opacity: 0.96;
+            transform: translateY(-2px) scale(1.01);
+            box-shadow: 0 12px 24px rgba(37,99,235,0.28);
+        }
+        .btn:active { transform: translateY(0) scale(0.97); }
+        .btn-secondary, .btn-success, .btn-danger, .nav-item, .theme-toggle, .theme-choice { position: relative; overflow: hidden; }
+
+        .ripple {
+            position: absolute;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.32);
+            transform: translate(-50%, -50%) scale(0);
+            animation: rippleAnim 600ms ease-out;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes rippleAnim {
+            from { opacity: 0.8; transform: translate(-50%, -50%) scale(0); }
+            to { opacity: 0; transform: translate(-50%, -50%) scale(2.8); }
+        }
+        .btn-secondary { background: linear-gradient(135deg, #64748b, #475569); box-shadow: 0 8px 20px rgba(100,116,139,0.25); }
+        .btn-success { background: linear-gradient(135deg, #16a34a, #15803d); box-shadow: 0 8px 20px rgba(22,163,74,0.22); }
+        .btn-danger { background: linear-gradient(135deg, #dc2626, #b91c1c); box-shadow: 0 8px 20px rgba(220,38,38,0.22); }
+
+        .badge { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
+        .badge-success { background: #dcfce7; color: #15803d; }
+        .badge-danger { background: #fee2e2; color: #b91c1c; }
+        .badge-warning { background: #fef3c7; color: #b45309; }
+
+        .request-banner {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            color: #92400e;
+            border: 1px solid #f59e0b;
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            font-weight: 700;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2);
+            animation: bannerGlow 3.2s ease-in-out infinite;
+        }
+        @keyframes bannerGlow {
+            0%, 100% { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2), 0 0 0 rgba(245,158,11,0.0); }
+            50% { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.35), 0 0 16px rgba(245,158,11,0.16); }
+        }
+        .request-list {
+            display: grid; gap: 1rem; margin-bottom: 2rem;
+        }
+        .request-card {
+            background: linear-gradient(135deg, #fff7ed, #fffbeb);
+            border: 1px solid #fdba74;
+            border-left: 5px solid #ea580c;
+            border-radius: 12px;
+            padding: 1rem;
+            transition: transform 180ms ease, box-shadow 180ms ease;
+        }
+
+        .section {
+            display: none;
+            opacity: 0;
+            transform: translateY(14px) scale(0.985);
+            transition: opacity 260ms ease, transform 260ms ease;
+        }
+
+        .section.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        .switch-left {
+            animation: switchLeft 420ms cubic-bezier(.2,.8,.2,1);
+        }
+
+        .switch-right {
+            animation: switchRight 420ms cubic-bezier(.2,.8,.2,1);
+        }
+
+        .switch-up {
+            animation: switchUp 420ms cubic-bezier(.2,.8,.2,1);
+        }
+
+        .switch-scale {
+            animation: switchScale 420ms cubic-bezier(.2,.8,.2,1);
+        }
+
+        .switch-flip {
+            animation: switchFlip 520ms cubic-bezier(.2,.8,.2,1);
+            transform-origin: center;
+        }
+
+        .switch-bounce {
+            animation: switchBounce 520ms cubic-bezier(.2,.8,.2,1);
+        }
+
+        @keyframes switchLeft {
+            from { opacity: 0; transform: translateX(-28px) scale(0.97); filter: blur(4px); }
+            to { opacity: 1; transform: translateX(0) scale(1); filter: blur(0); }
+        }
+
+        @keyframes switchRight {
+            from { opacity: 0; transform: translateX(28px) scale(0.97); filter: blur(4px); }
+            to { opacity: 1; transform: translateX(0) scale(1); filter: blur(0); }
+        }
+
+        @keyframes switchUp {
+            from { opacity: 0; transform: translateY(24px) scale(0.97); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        @keyframes switchScale {
+            from { opacity: 0; transform: scale(0.88); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes switchFlip {
+            from { opacity: 0; transform: perspective(900px) rotateY(-24deg) scale(0.96); }
+            to { opacity: 1; transform: perspective(900px) rotateY(0) scale(1); }
+        }
+
+        @keyframes switchBounce {
+            0% { opacity: 0; transform: scale(0.8); }
+            60% { opacity: 1; transform: scale(1.05); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- INTRO SLIDE -->
+    <div id="intro-slide">
+        <div class="glow-circle"></div>
+        <div class="title-container">
+            <div class="animated-title">LIB-NEXUS</div>
+            <div class="subtitle">Smart Library System</div>
+        </div>
+    </div>
+
+    <div id="logout-overlay" class="logout-overlay" aria-hidden="true">
+        <div class="logout-scene">
+            <div class="library-building" aria-hidden="true">
+                <div class="library-window"></div>
+                <div class="library-window"></div>
+                <div class="library-window"></div>
+                <div class="library-window"></div>
+                <div class="library-window"></div>
+                <div class="library-window"></div>
+                <div class="library-door"></div>
+            </div>
+            <div class="logout-title">LIB-NEXUS</div>
+            <div class="logout-thanks">Thank you for visiting our page</div>
+        </div>
+    </div>
+
+    <!-- HEADER -->
+    <header>
+        <h2>LIB-NEXUS</h2>
+        <div id="header-user" class="user-info" style="display: none;">
+            <div class="user-badge" id="user-display"></div>
+            <button class="btn-switch" onclick="toggleRole()">🔄 Switch Role</button>
+            <button class="btn-logout" onclick="logout()">Logout</button>
+        </div>
+    </header>
+
+    <!-- NOTIFICATION MODAL -->
+    <div id="modal-overlay" class="modal-overlay">
+        <div class="modal">
+            <h3 id="modal-title">Notification</h3>
+            <p id="modal-body">Message goes here...</p>
+            <div class="modal-actions">
+                <button class="btn" onclick="closeModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADD BOOK MODAL -->
+    <div id="add-book-modal" class="modal-overlay">
+        <div class="modal">
+            <h3>Add New Book to Inventory</h3>
+            <form id="add-book-form">
+                <div class="form-group" style="margin-top: 1rem;">
+                    <label for="new-title">Book Title</label>
+                    <input type="text" id="new-title" required>
+                </div>
+                <div class="form-group">
+                    <label for="new-author">Author</label>
+                    <input type="text" id="new-author" required>
+                </div>
+                <div class="form-group">
+                    <label for="new-category">Category</label>
+                    <select id="new-category">
+                        <option value="Computer Science">Computer Science</option>
+                        <option value="Software Engineering">Software Engineering</option>
+                        <option value="Artificial Intelligence">Artificial Intelligence</option>
+                        <option value="General">General</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="new-quantity">Total Copies</label>
+                    <input type="number" id="new-quantity" min="1" value="5" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeAddBookModal()">Cancel</button>
+                    <button type="submit" class="btn btn-success" style="margin-top:0;">Save Book</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- LOGIN VIEW -->
+        <div id="login-view" class="section active">
+            <div class="login-card">
+                <h2>Student Portal Login</h2>
+                <p>Enter your details to access the system</p>
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="user-name">Full Name</label>
+                        <input type="text" id="user-name" placeholder="Enter your name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="user-email">Gmail Address</label>
+                        <input type="email" id="user-email" placeholder="example@gmail.com" required>
+                    </div>
+                    <button type="submit" class="btn">Login to Dashboard</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- DASHBOARD VIEW -->
+        <div id="dashboard-view" class="section dashboard-section">
+            <div class="app-shell">
+                <aside class="sidebar">
+                    <div>
+                        <div class="sidebar-brand">LIB-NEXUS</div>
+                        <div class="sidebar-status" id="sidebar-status">Workspace ready</div>
+                    </div>
+                    <div class="nav-list">
+                        <button class="nav-item active" type="button" data-panel="dashboard">📚 Dashboard</button>
+                        <button class="nav-item" type="button" data-panel="inventory">🗂️ Inventory</button>
+                        <button class="nav-item" type="button" data-panel="loans">📖 Loans</button>
+                        <button class="nav-item" type="button" data-panel="requests">🧾 Requests</button>
+                        <button class="nav-item" type="button" data-panel="account">👤 Account</button>
+                        <button class="nav-item" type="button" data-panel="about">ℹ️ About Us</button>
+                        <button class="nav-item" type="button" data-panel="settings">⚙️ Settings</button>
+                        <button class="nav-item logout-nav-item" type="button" data-panel="logout">🚪 Logout</button>
+                    </div>
+
+                    <div class="sidebar-settings">
+                        <div class="settings-title">Appearance</div>
+                        <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="false">
+                            <span class="theme-icon">🌙</span>
+                            <span class="theme-label">Dark Theme</span>
+                        </button>
+                    </div>
+                </aside>
+
+                <main class="app-main">
+                    <div class="topbar">
+                        <div class="topbar-left">
+                            <h2 id="topbar-title">Library Control Center</h2>
+                            <p id="topbar-subtitle">Smart circulation and student access</p>
+                        </div>
+                        <div class="topbar-right">
+                            <div class="search-pill">Live System</div>
+                            <button class="btn-switch" style="padding: 0.6rem 1rem;" onclick="toggleRole()">🔄 Switch View</button>
+                        </div>
+                    </div>
+
+                    <div id="new-arrival-bar" class="new-arrival-bar" aria-live="polite">
+                        <span class="arrival-icon">📚</span>
+                        <div id="arrival-text" class="arrival-text">New books are arriving in the library.</div>
+                    </div>
+
+                    <div class="hero">
+                        <div>
+                            <div class="dashboard-badge">⚡ Live Dashboard</div>
+                            <h1 id="welcome-message">Automated Smart Library System</h1>
+                            <p>Real-Time Inventory Control & Circulation</p>
+                        </div>
+                        <div>
+                            <div class="stat-strip">
+                                <div class="mini-stat">
+                                    <strong id="mini-books">0</strong>
+                                    <span>Books Listed</span>
+                                </div>
+                                <div class="mini-stat">
+                                    <strong id="mini-loans">0</strong>
+                                    <span>Active Loans</span>
+                                </div>
+                                <div class="mini-stat">
+                                    <strong id="mini-requests">0</strong>
+                                    <span>Requests</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="settings-panel" class="settings-panel">
+                        <h3 style="margin-bottom: 0.9rem; color: var(--primary);">Theme Settings</h3>
+                        <div class="settings-grid">
+                            <button class="theme-choice" type="button" data-theme-option="light">☀️ Light Theme</button>
+                            <button class="theme-choice" type="button" data-theme-option="dark">🌙 Dark Theme</button>
+                        </div>
+                    </div>
+
+                    <div id="account-panel" class="account-panel">
+                        <div class="account-intro">
+                            <div class="about-badge">👤 Student Profile</div>
+                            <h3 style="margin: 0.35rem 0 0.5rem; color: var(--primary);">My Account</h3>
+                            <p style="color: #475569; line-height: 1.7;">View your current student identity and email details from the dashboard.</p>
+                        </div>
+
+                        <div class="account-grid">
+                            <div class="account-card">
+                                <div class="account-label">Student Name</div>
+                                <h4 id="account-student-name">-</h4>
+                            </div>
+                            <div class="account-card">
+                                <div class="account-label">Email ID</div>
+                                <h4 id="account-student-email">-</h4>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="about-panel" class="about-panel">
+                        <div class="about-intro">
+                            <div class="about-badge">📘 Professional Library Platform</div>
+                            <h3>About LIB-NEXUS</h3>
+                            <p>
+                                LIB-NEXUS is a modern and dependable digital library dashboard designed to help students
+                                and librarians manage books, borrowing activity, requests, and inventory information in one
+                                unified system. Built with a clean interface and streamlined workflow, it brings professionalism,
+                                order, and accessibility to the full library experience.
+                            </p>
+                        </div>
+
+                        <div class="about-grid">
+                            <div class="about-card">
+                                <h4>Our Mission</h4>
+                                <p>
+                                    To create a smarter way for educational institutions to organize reading resources,
+                                    improve circulation, and support faster student-librarian communication.
+                                </p>
+                            </div>
+
+                            <div class="about-card">
+                                <h4>What This Website Offers</h4>
+                                <ul>
+                                    <li>Live book inventory visibility</li>
+                                    <li>Borrow request tracking</li>
+                                    <li>Easy role switching for student and librarian workflows</li>
+                                    <li>Clean, professional dashboard experience</li>
+                                </ul>
+                            </div>
+
+                            <div class="about-card">
+                                <h4>Why It Matters</h4>
+                                <p>
+                                    A reliable library platform reduces delays, improves transparency, and ensures that
+                                    books are easier to discover, borrow, and manage with confidence.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STUDENT VIEW -->
+                    <div id="student-view" class="section">
+                        <div class="student-dashboard-layout">
+                            <aside class="popular-books-panel">
+                                <h3>Popular Books</h3>
+                                <div id="popular-book-list" class="popular-book-list"></div>
+
+                                <div class="rating-summary">
+                                    <strong>⭐ Community Rating</strong>
+                                    <span>Tap a star to rate your favourite title on the student dashboard.</span>
+                                </div>
+                            </aside>
+
+                            <div class="student-main-column">
+                                <h2>Available Books</h2>
+                                <div class="filter-bar">
+                                    <input type="text" id="student-search" placeholder="Search title or author..." oninput="renderStudentBooks()">
+                                    <select id="student-category-filter" onchange="renderStudentBooks()">
+                                        <option value="All">All Categories</option>
+                                        <option value="Computer Science">Computer Science</option>
+                                        <option value="Software Engineering">Software Engineering</option>
+                                        <option value="Artificial Intelligence">Artificial Intelligence</option>
+                                        <option value="General">General</option>
+                                    </select>
+                                </div>
+                                <div class="book-grid" id="student-book-list"></div>
+
+                                <h2 style="margin-top: 2.5rem; margin-bottom: 1rem;">My Borrowed Books</h2>
+                                <div id="borrowed-list" class="book-grid"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- LIBRARIAN VIEW -->
+                    <div id="librarian-view" class="section">
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <h3 id="stat-total-books">0</h3>
+                                <p>Total Books in Inventory</p>
+                            </div>
+                            <div class="stat-card">
+                                <h3 id="stat-low-stock">0</h3>
+                                <p>Low Stock Alerts</p>
+                            </div>
+                        </div>
+
+                        <div class="request-banner">🔔 Borrow Requests from Students</div>
+                        <div class="request-list" id="librarian-request-list"></div>
+
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h2>Inventory Control</h2>
+                            <button class="btn btn-success" style="width: auto; margin-top:0;" onclick="openAddBookModal()">+ Add New Title</button>
+                        </div>
+                        <div class="book-grid" id="librarian-book-list"></div>
+                    </div>
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const intro = document.getElementById('intro-slide');
+                if (intro) intro.classList.add('intro-hidden');
+            }, 3200);
+
+            document.getElementById('login-form').addEventListener('submit', handleLogin);
+            document.getElementById('add-book-form').addEventListener('submit', handleAddBook);
+            initMicroInteractions();
+            initApp();
+        });
+
+        const defaultInventory = [
+            { id: 1, title: "Data Structures & Algorithms in C++", author: "Mark Allen Weiss", category: "Computer Science", total: 10, available: 5, threshold: 2 },
+            { id: 2, title: "Database System Concepts", author: "Abraham Silberschatz", category: "Computer Science", total: 8, available: 4, threshold: 3 },
+            { id: 3, title: "Operating System Concepts", author: "Peter B. Galvin", category: "Computer Science", total: 5, available: 2, threshold: 1 },
+            { id: 4, title: "Clean Code", author: "Robert C. Martin", category: "Software Engineering", total: 12, available: 7, threshold: 3 },
+            { id: 5, title: "JavaScript: The Good Parts", author: "Douglas Crockford", category: "Software Engineering", total: 9, available: 6, threshold: 2 },
+            { id: 6, title: "Introduction to Algorithms", author: "Thomas H. Cormen", category: "Computer Science", total: 7, available: 3, threshold: 2 },
+            { id: 7, title: "Computer Networking", author: "James Kurose", category: "Computer Science", total: 6, available: 4, threshold: 1 },
+            { id: 8, title: "Artificial Intelligence", author: "Stuart Russell", category: "Artificial Intelligence", total: 11, available: 5, threshold: 3 }
+        ];
+
+        function safeReadStorage(key, fallback) {
+            const rawValue = localStorage.getItem(key);
+            if (!rawValue) return fallback;
+            try { return JSON.parse(rawValue); }
+            catch (e) { localStorage.removeItem(key); return fallback; }
+        }
+
+        let inventory = safeReadStorage('lib_inventory', defaultInventory);
+        let studentLoans = safeReadStorage('lib_loans', []);
+        let borrowRequests = safeReadStorage('lib_borrow_requests', []);
+        let latestArrival = safeReadStorage('lib_latest_arrival', null);
+        let currentUser = safeReadStorage('lib_user', null);
+        let popularBookRatings = safeReadStorage('lib_popular_ratings', {});
+
+        function saveData() {
+            localStorage.setItem('lib_inventory', JSON.stringify(inventory));
+            localStorage.setItem('lib_loans', JSON.stringify(studentLoans));
+            localStorage.setItem('lib_borrow_requests', JSON.stringify(borrowRequests));
+            localStorage.setItem('lib_latest_arrival', JSON.stringify(latestArrival));
+            localStorage.setItem('lib_popular_ratings', JSON.stringify(popularBookRatings));
+            if (currentUser) localStorage.setItem('lib_user', JSON.stringify(currentUser));
+            else localStorage.removeItem('lib_user');
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const name = document.getElementById('user-name').value;
+            const email = document.getElementById('user-email').value;
+            currentUser = { name, email, role: 'student' };
+            saveData();
+            initApp();
+        }
+
+        function toggleRole() {
+            if (!currentUser) return;
+            currentUser.role = (currentUser.role === 'student') ? 'librarian' : 'student';
+            saveData();
+            initApp();
+        }
+
+        function hideNewArrivalBar() {
+            const bar = document.getElementById('new-arrival-bar');
+            if (bar) {
+                bar.classList.remove('visible');
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            saveData();
+
+            const logoutOverlay = document.getElementById('logout-overlay');
+            if (logoutOverlay) {
+                logoutOverlay.classList.add('active');
+                logoutOverlay.setAttribute('aria-hidden', 'false');
+                setTimeout(() => {
+                    logoutOverlay.classList.remove('active');
+                    logoutOverlay.setAttribute('aria-hidden', 'true');
+                    initApp();
+                }, 5200);
+            } else {
+                initApp();
+            }
+        }
+
+        function initApp() {
+            const savedTheme = safeReadStorage('lib_theme', 'light');
+            setTheme(savedTheme);
+
+            if (!currentUser) {
+                document.getElementById('login-view').classList.add('active');
+                document.getElementById('dashboard-view').classList.remove('active');
+                document.getElementById('header-user').style.display = 'none';
+            } else {
+                document.getElementById('login-view').classList.remove('active');
+                document.getElementById('dashboard-view').classList.add('active');
+                document.getElementById('header-user').style.display = 'flex';
+
+                document.getElementById('user-display').innerHTML = `👤 <strong>${currentUser.name}</strong> (${currentUser.role.toUpperCase()})`;
+                document.getElementById('welcome-message').innerText = `Welcome, ${currentUser.name}!`;
+                document.getElementById('topbar-title').innerText = currentUser.role === 'student' ? 'Student Library Workspace' : 'Librarian Control Center';
+                document.getElementById('topbar-subtitle').innerText = currentUser.role === 'student' ? 'Explore books, track loans, and manage your requests' : 'Monitor catalog activity and inventory health';
+
+                document.getElementById('student-view').classList.toggle('active', currentUser.role === 'student');
+                document.getElementById('librarian-view').classList.toggle('active', currentUser.role === 'librarian');
+
+                setupDashboardMotion();
+                setupSidebarInteractions();
+                renderAccountDetails();
+                render();
+
+                if (currentUser.role === 'student') {
+                    const dashboardView = document.getElementById('dashboard-view');
+                    if (dashboardView) {
+                        setTimeout(() => {
+                            dashboardView.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }, 120);
+                    }
+
+                    if (latestArrival?.title && latestArrival?.author) {
+                        setTimeout(() => {
+                            showNewArrivalBar(latestArrival.title, latestArrival.author);
+                        }, 250);
+                    } else {
+                        hideNewArrivalBar();
+                    }
+                } else {
+                    hideNewArrivalBar();
+                }
+            }
+        }
+
+        function setTheme(theme) {
+            const normalizedTheme = theme === 'dark' ? 'dark' : 'light';
+            document.body.dataset.theme = normalizedTheme;
+
+            const toggleBtn = document.getElementById('theme-toggle');
+            if (toggleBtn) {
+                const icon = toggleBtn.querySelector('.theme-icon');
+                const label = toggleBtn.querySelector('.theme-label');
+                if (icon) icon.textContent = normalizedTheme === 'dark' ? '☀️' : '🌙';
+                if (label) label.textContent = normalizedTheme === 'dark' ? 'Light Theme' : 'Dark Theme';
+                toggleBtn.setAttribute('aria-pressed', normalizedTheme === 'dark' ? 'true' : 'false');
+            }
+
+            localStorage.setItem('lib_theme', JSON.stringify(normalizedTheme));
+        }
+
+        function toggleTheme() {
+            const nextTheme = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
+            setTheme(nextTheme);
+        }
+
+        function renderAccountDetails() {
+            const accountName = document.getElementById('account-student-name');
+            const accountEmail = document.getElementById('account-student-email');
+            if (!accountName || !accountEmail || !currentUser) return;
+
+            accountName.innerText = currentUser.name || 'Not available';
+            accountEmail.innerText = currentUser.email || 'Not available';
+        }
+
+        function applyPanelTransition(panel) {
+            const transitionMap = {
+                dashboard: 'switch-left',
+                inventory: 'switch-right',
+                loans: 'switch-up',
+                requests: 'switch-scale',
+                account: 'switch-flip',
+                about: 'switch-up',
+                settings: 'switch-bounce'
+            };
+
+            const activeTarget = document.querySelector('.settings-panel.active, .account-panel.active, .about-panel.active, #student-view.active, #librarian-view.active');
+            if (!activeTarget) return;
+
+            const animationClass = transitionMap[panel] || 'switch-up';
+            activeTarget.classList.remove('switch-left', 'switch-right', 'switch-up', 'switch-scale', 'switch-flip', 'switch-bounce');
+            void activeTarget.offsetWidth;
+            activeTarget.classList.add(animationClass);
+
+            setTimeout(() => {
+                activeTarget.classList.remove('switch-left', 'switch-right', 'switch-up', 'switch-scale', 'switch-flip', 'switch-bounce');
+            }, 520);
+        }
+
+        function initMicroInteractions() {
+            document.querySelectorAll('.btn, .nav-item, .theme-toggle, .theme-choice, .star-btn').forEach(el => {
+                el.addEventListener('click', function (event) {
+                    const rect = el.getBoundingClientRect();
+                    const ripple = document.createElement('span');
+                    ripple.className = 'ripple';
+                    ripple.style.left = `${event.clientX - rect.left}px`;
+                    ripple.style.top = `${event.clientY - rect.top}px`;
+                    ripple.style.width = `${Math.max(rect.width, rect.height) * 1.2}px`;
+                    ripple.style.height = `${Math.max(rect.width, rect.height) * 1.2}px`;
+                    el.appendChild(ripple);
+                    setTimeout(() => ripple.remove(), 620);
+                });
+            });
+        }
+
+        function setupSidebarInteractions() {
+            document.querySelectorAll('.nav-item').forEach(button => {
+                button.addEventListener('click', () => {
+                    const panel = button.dataset.panel;
+
+                    if (panel === 'logout') {
+                        document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+                        document.getElementById('sidebar-status').innerText = 'Signing out...';
+                        logout();
+                        return;
+                    }
+
+                    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+                    button.classList.add('active');
+
+                    const statusLabel = {
+                        dashboard: 'Overview panel selected',
+                        inventory: 'Catalog view selected',
+                        loans: 'Loan records selected',
+                        requests: 'Request queue selected',
+                        account: 'Account details selected',
+                        about: 'About Us selected',
+                        settings: 'Appearance settings selected'
+                    };
+
+                    const hero = document.querySelector('.hero');
+                    const studentView = document.getElementById('student-view');
+                    const librarianView = document.getElementById('librarian-view');
+                    const settingsPanel = document.getElementById('settings-panel');
+                    const accountPanel = document.getElementById('account-panel');
+                    const aboutPanel = document.getElementById('about-panel');
+
+                    document.getElementById('sidebar-status').innerText = statusLabel[panel] || 'Workspace ready';
+                    document.getElementById('topbar-title').innerText = panel === 'settings'
+                        ? 'Preferences Panel'
+                        : (panel === 'account' ? 'My Account' : (panel === 'about' ? 'About LIB-NEXUS' : (currentUser.role === 'student' ? 'Student Library Workspace' : 'Librarian Control Center')));
+                    document.getElementById('topbar-subtitle').innerText = panel === 'settings'
+                        ? 'Switch between light and dark appearance instantly'
+                        : (panel === 'account'
+                            ? 'View your current student profile information' 
+                            : (panel === 'about'
+                                ? 'Learn about the purpose and professional value of this platform'
+                                : (currentUser.role === 'student' ? 'Explore books, track loans, and manage your requests' : 'Monitor catalog activity and inventory health')));
+
+                    if (hero) {
+                        hero.style.display = panel === 'about' || panel === 'account' ? 'none' : 'flex';
+                    }
+
+                    if (studentView) {
+                        studentView.classList.toggle('active', panel !== 'about' && panel !== 'settings' && panel !== 'account' && currentUser.role === 'student');
+                        studentView.style.display = panel === 'about' || panel === 'settings' || panel === 'account' ? 'none' : '';
+                    }
+
+                    if (librarianView) {
+                        librarianView.classList.toggle('active', panel !== 'about' && panel !== 'settings' && panel !== 'account' && currentUser.role === 'librarian');
+                        librarianView.style.display = panel === 'about' || panel === 'settings' || panel === 'account' ? 'none' : '';
+                    }
+
+                    if (settingsPanel) {
+                        settingsPanel.classList.toggle('active', panel === 'settings');
+                    }
+
+                    if (accountPanel) {
+                        accountPanel.classList.toggle('active', panel === 'account');
+                        accountPanel.style.display = panel === 'account' ? 'block' : 'none';
+                    }
+
+                    if (aboutPanel) {
+                        aboutPanel.classList.toggle('active', panel === 'about');
+                        aboutPanel.style.display = panel === 'about' ? 'block' : 'none';
+                    }
+
+                    applyPanelTransition(panel);
+
+                    if (panel === 'about' && aboutPanel) {
+                        setTimeout(() => {
+                            aboutPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }, 60);
+                    }
+
+                    if (panel === 'account' && accountPanel) {
+                        renderAccountDetails();
+                        setTimeout(() => {
+                            accountPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }, 60);
+                    }
+                });
+            });
+
+            const themeToggle = document.getElementById('theme-toggle');
+            if (themeToggle) {
+                themeToggle.addEventListener('click', () => {
+                    toggleTheme();
+                    updateThemeChoiceButtons();
+                });
+            }
+
+            document.querySelectorAll('[data-theme-option]').forEach(button => {
+                button.addEventListener('click', () => {
+                    const targetTheme = button.dataset.themeOption;
+                    setTheme(targetTheme);
+                    updateThemeChoiceButtons();
+                });
+            });
+
+            updateThemeChoiceButtons();
+        }
+
+        function updateThemeChoiceButtons() {
+            const current = document.body.dataset.theme === 'dark' ? 'dark' : 'light';
+            document.querySelectorAll('[data-theme-option]').forEach(button => {
+                button.classList.toggle('active', button.dataset.themeOption === current);
+            });
+        }
+
+        function setupDashboardMotion() {
+            document.querySelectorAll('.stat-card, .book-card, .request-card, .popular-book-card, .account-card, .about-card, .mini-stat').forEach(card => {
+                card.addEventListener('mousemove', e => {
+                    const rect = card.getBoundingClientRect();
+                    const x = (e.clientX - rect.left) / rect.width;
+                    const y = (e.clientY - rect.top) / rect.height;
+                    const rotateY = (x - 0.5) * 8;
+                    const rotateX = (0.5 - y) * 8;
+                    card.style.transform = `perspective(900px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-4px) scale(1.01)`;
+                });
+
+                card.addEventListener('mouseleave', () => {
+                    card.style.transform = '';
+                });
+            });
+        }
+
+        function animateStatValue(elementId, targetValue) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+
+            const startValue = Number(el.dataset.value || 0);
+            const totalSteps = 14;
+            let step = 0;
+
+            const interval = setInterval(() => {
+                step += 1;
+                const progress = step / totalSteps;
+                const nextValue = Math.round(startValue + (targetValue - startValue) * progress);
+                el.innerText = nextValue;
+                el.dataset.value = nextValue;
+
+                if (step >= totalSteps) {
+                    clearInterval(interval);
+                    el.innerText = targetValue;
+                    el.dataset.value = targetValue;
+                }
+            }, 35);
+        }
+
+        function showModal(title, text) {
+            document.getElementById('modal-title').innerHTML = title;
+            document.getElementById('modal-body').innerHTML = text;
+            document.getElementById('modal-overlay').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('modal-overlay').style.display = 'none';
+        }
+
+        function openAddBookModal() { document.getElementById('add-book-modal').style.display = 'flex'; }
+        function closeAddBookModal() { 
+            document.getElementById('add-book-modal').style.display = 'none';
+            document.getElementById('add-book-form').reset();
+        }
+
+        function showNewArrivalBar(title, author) {
+            const bar = document.getElementById('new-arrival-bar');
+            const text = document.getElementById('arrival-text');
+            if (!bar || !text || !title || !author || currentUser?.role !== 'student') return;
+
+            latestArrival = { title, author, createdAt: new Date().toISOString() };
+            saveData();
+
+            text.innerHTML = `🎉 Fresh Shelf Alert: <strong>${title}</strong> by <strong>${author}</strong> just landed in the library!`;
+            bar.classList.add('visible');
+        }
+
+        function handleAddBook(e) {
+            e.preventDefault();
+            const title = document.getElementById('new-title').value.trim();
+            const author = document.getElementById('new-author').value.trim();
+            const category = document.getElementById('new-category').value;
+            const qty = parseInt(document.getElementById('new-quantity').value, 10);
+
+            if (!title || !author || isNaN(qty) || qty < 1) return;
+
+            const newBook = {
+                id: Date.now(),
+                title, author, category,
+                total: qty, available: qty,
+                threshold: Math.ceil(qty * 0.2)
+            };
+
+            inventory.push(newBook);
+            saveData();
+            closeAddBookModal();
+            render();
+            showNewArrivalBar(title, author);
+            showModal("Success", `Added <strong>${title}</strong> to library stock.`);
+        }
+
+        function generateRandomDueDate() {
+            const dueDate = new Date();
+            const randomDays = Math.floor(Math.random() * 21) + 7;
+            dueDate.setDate(dueDate.getDate() + randomDays);
+            return dueDate;
+        }
+
+        function borrowBook(bookId) {
+            const book = inventory.find(b => b.id === bookId);
+            if (!book || book.available <= 0) {
+                showModal("Out of Stock", "Sorry, this book is currently out of stock.");
+                return;
+            }
+
+            const existingRequest = borrowRequests.find(request => {
+                return request.studentEmail === currentUser.email && request.bookId === bookId && request.status === 'pending';
+            });
+
+            if (existingRequest) {
+                showModal("Request Pending", `Your borrowing request for <strong>${book.title}</strong> is already waiting for librarian approval.`);
+                return;
+            }
+
+            borrowRequests.unshift({
+                requestId: Date.now(),
+                studentName: currentUser.name,
+                studentEmail: currentUser.email,
+                bookId: book.id,
+                title: book.title,
+                author: book.author,
+                createdAt: new Date().toLocaleString(),
+                status: 'pending'
+            });
+
+            saveData();
+            render();
+            playBorrowNotificationSound();
+            showModal("Borrow Request Sent", `A notification has been sent to the librarian dashboard for <strong>${book.title}</strong> by <strong>${book.author}</strong>.`);
+        }
+
+        function returnBook(loanId) {
+            const loanIndex = studentLoans.findIndex(l => l.loanId === loanId);
+            if (loanIndex === -1) return;
+
+            const loan = studentLoans[loanIndex];
+            const book = inventory.find(b => b.id === loan.bookId);
+            if (book) book.available = Math.min(book.total, book.available + 1);
+
+            studentLoans.splice(loanIndex, 1);
+            borrowRequests = borrowRequests.filter(request => {
+                return !(request.studentEmail === currentUser.email && request.bookId === loan.bookId);
+            });
+
+            saveData();
+            render();
+            showModal("Returned Successfully", `Thank you for returning <strong>${loan.title}</strong>.`);
+        }
+
+        function ratePopularBook(bookId, rating) {
+            popularBookRatings[bookId] = rating;
+            saveData();
+            renderPopularBooks();
+        }
+
+        function renderPopularBooks() {
+            const listEl = document.getElementById('popular-book-list');
+            if (!listEl) return;
+
+            const popularBooks = inventory.slice(0, 4);
+            listEl.innerHTML = popularBooks.map(book => {
+                const rating = popularBookRatings[book.id] || 4;
+                return `
+                    <div class="popular-book-card">
+                        <h4>${book.title}</h4>
+                        <p>by ${book.author}</p>
+                        <div class="stars" aria-label="Rate ${book.title}">
+                            ${[1, 2, 3, 4, 5].map(star => `
+                                <button
+                                    class="star-btn ${star <= rating ? 'active' : ''}"
+                                    type="button"
+                                    title="Rate ${star} star${star > 1 ? 's' : ''}"
+                                    onclick="ratePopularBook(${book.id}, ${star})"
+                                >★</button>
+                            `).join('')}
+                        </div>
+                        <button class="btn" onclick="borrowBook(${book.id})">Borrow This Book</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderStudentBooks() {
+            const query = (document.getElementById('student-search')?.value || '').toLowerCase();
+            const category = document.getElementById('student-category-filter')?.value || 'All';
+            const listEl = document.getElementById('student-book-list');
+            if (!listEl) return;
+
+            const filtered = inventory.filter(b => {
+                const matchesQuery = b.title.toLowerCase().includes(query) || b.author.toLowerCase().includes(query);
+                const matchesCat = category === 'All' || b.category === category;
+                return matchesQuery && matchesCat;
+            });
+
+            listEl.innerHTML = filtered.map(book => {
+                const isAvailable = book.available > 0;
+                return `
+                    <div class="book-card">
+                        <div class="book-title-row">
+                            <div class="book-cover-box">📖</div>
+                            <div>
+                                <h4>${book.title}</h4>
+                                <p style="color:#64748b; font-size:0.85rem;">by ${book.author}</p>
+                                <span class="badge badge-warning" style="margin-top:0.3rem;">${book.category || 'General'}</span>
+                            </div>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:0.5rem;">
+                            <span class="badge ${isAvailable ? 'badge-success' : 'badge-danger'}">
+                                ${isAvailable ? `${book.available} Available` : 'Out of Stock'}
+                            </span>
+                        </div>
+                        <button class="btn ${isAvailable ? '' : 'btn-secondary'}" 
+                                ${isAvailable ? `onclick="borrowBook(${book.id})"` : 'disabled'}>
+                            ${isAvailable ? 'Borrow Book' : 'Unavailable'}
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderBorrowedBooks() {
+            const listEl = document.getElementById('borrowed-list');
+            if (!listEl) return;
+
+            const userLoans = studentLoans.filter(l => l.userEmail === currentUser.email);
+
+            if (userLoans.length === 0) {
+                listEl.innerHTML = `<p style="color: #64748b;">No active borrowed books.</p>`;
+                return;
+            }
+
+            const now = new Date();
+
+            listEl.innerHTML = userLoans.map(loan => {
+                const dueDate = loan.dueDateISO ? new Date(loan.dueDateISO) : new Date();
+                const isOverdue = now > dueDate;
+
+                return `
+                    <div class="book-card" style="border-left: 4px solid ${isOverdue ? 'var(--danger)' : 'var(--warning)'};">
+                        <div class="book-title-row">
+                            <div class="book-cover-box">📖</div>
+                            <div>
+                                <h4>${loan.title}</h4>
+                                <p style="color:#64748b; font-size:0.85rem;">Due: ${loan.dueDateStr || loan.dueDate}</p>
+                                ${isOverdue ? '<span class="badge badge-danger" style="margin-top:0.25rem;">OVERDUE</span>' : ''}
+                            </div>
+                        </div>
+                        <button class="btn btn-secondary" onclick="returnBook(${loan.loanId})">Return Book</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateStack(bookId, delta) {
+            const book = inventory.find(b => b.id === bookId);
+            if (!book) return;
+
+            if (delta > 0) {
+                book.total += 1;
+                book.available += 1;
+            } else if (delta < 0 && book.total > 0) {
+                book.total = Math.max(0, book.total - 1);
+                book.available = Math.max(0, book.available - 1);
+            }
+
+            saveData();
+            render();
+        }
+
+        function playBorrowNotificationSound() {
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContextClass) return;
+
+            const audioContext = new AudioContextClass();
+            const playTone = (frequency, duration, delay = 0) => {
+                setTimeout(() => {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    osc.type = 'square';
+                    osc.frequency.value = frequency;
+                    gain.gain.value = 0.03;
+                    osc.connect(gain);
+                    gain.connect(audioContext.destination);
+                    osc.start();
+                    setTimeout(() => {
+                        osc.stop();
+                        osc.disconnect();
+                        gain.disconnect();
+                    }, duration);
+                }, delay);
+            };
+
+            audioContext.resume();
+            playTone(880, 120, 0);
+            playTone(660, 120, 120);
+            playTone(920, 180, 240);
+        }
+
+        function acceptBorrowRequest(requestId) {
+            const request = borrowRequests.find(item => item.requestId === requestId);
+            if (!request) return;
+
+            const book = inventory.find(item => item.id === request.bookId);
+            if (!book) {
+                showModal("Unavailable", "The requested book is no longer available in inventory.");
+                return;
+            }
+
+            if (book.available <= 0) {
+                showModal("Unavailable", `The book <strong>${request.title}</strong> is no longer available for borrowing.`);
+                return;
+            }
+
+            const existingLoan = studentLoans.find(loan => {
+                return loan.userEmail === request.studentEmail && loan.bookId === request.bookId;
+            });
+
+            if (!existingLoan) {
+                const dueDate = generateRandomDueDate();
+                studentLoans.push({
+                    loanId: Date.now(),
+                    bookId: book.id,
+                    userEmail: request.studentEmail,
+                    title: book.title,
+                    author: book.author,
+                    dueDateISO: dueDate.toISOString(),
+                    dueDateStr: dueDate.toLocaleDateString()
+                });
+            }
+
+            request.status = 'accepted';
+            request.respondedAt = new Date().toLocaleString();
+            book.available = Math.max(0, book.available - 1);
+
+            saveData();
+            render();
+
+            const priorRole = currentUser.role;
+            currentUser.role = 'student';
+            saveData();
+            initApp();
+
+            if (priorRole === 'librarian') {
+                showModal("Borrow Request Accepted", `Your borrowing request for <strong>${request.title}</strong> has been accepted by the librarian.`);
+            }
+        }
+
+        function rejectBorrowRequest(requestId) {
+            const requestIndex = borrowRequests.findIndex(item => item.requestId === requestId);
+            if (requestIndex === -1) return;
+
+            const request = borrowRequests[requestIndex];
+            borrowRequests.splice(requestIndex, 1);
+            request.status = 'rejected';
+            request.respondedAt = new Date().toLocaleString();
+
+            saveData();
+            render();
+            showModal("Borrow Request Rejected", `The borrowing request for <strong>${request.title}</strong> has been rejected.`);
+        }
+
+        function renderBorrowRequests() {
+            const listEl = document.getElementById('librarian-request-list');
+            if (!listEl) return;
+
+            if (borrowRequests.length === 0) {
+                listEl.innerHTML = '<div class="request-card">No borrow requests yet.</div>';
+                return;
+            }
+
+            listEl.innerHTML = borrowRequests.slice(0, 5).map(request => {
+                const statusLabel = request.status === 'accepted' ? 'Accepted' : (request.status === 'rejected' ? 'Rejected' : 'Pending');
+                const statusColor = request.status === 'accepted' ? 'var(--success)' : (request.status === 'rejected' ? 'var(--danger)' : 'var(--warning)');
+
+                return `
+                    <div class="request-card">
+                        <strong>Student:</strong> ${request.studentName} (${request.studentEmail})<br>
+                        <strong>Requested Book:</strong> ${request.title}<br>
+                        <strong>Author:</strong> ${request.author}<br>
+                        <span style="font-size: 0.8rem; color: #64748b;">Received: ${request.createdAt}</span><br>
+                        <span style="display:inline-block; margin-top:0.55rem; font-weight:700; color:${statusColor};">Status: ${statusLabel}</span>
+                        ${request.status === 'pending' ? `
+                            <div style="margin-top: 0.75rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
+                                <button class="btn btn-success" style="width:auto; margin-top:0; padding:0.5rem 0.9rem;" onclick="acceptBorrowRequest(${request.requestId})">Accept</button>
+                                <button class="btn btn-danger" style="width:auto; margin-top:0; padding:0.5rem 0.9rem;" onclick="rejectBorrowRequest(${request.requestId})">Not</button>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderLibrarianView() {
+            const listEl = document.getElementById('librarian-book-list');
+            if (!listEl) return;
+
+            const totalBooks = inventory.reduce((sum, b) => sum + b.total, 0);
+            const lowStock = inventory.filter(b => b.available <= b.threshold).length;
+
+            animateStatValue('stat-total-books', totalBooks);
+            animateStatValue('stat-low-stock', lowStock);
+            renderBorrowRequests();
+
+            listEl.innerHTML = inventory.map(book => {
+                const isOut = book.available <= 0;
+                const isLow = book.available <= book.threshold;
+                return `
+                    <div class="book-card" style="${isOut ? 'border-left: 4px solid var(--danger);' : ''}">
+                        <div class="book-title-row">
+                            <div class="book-cover-box">📖</div>
+                            <div>
+                                <h4>${book.title}</h4>
+                                <p style="color:#64748b; font-size:0.85rem;">Stock: ${book.available} / ${book.total}</p>
+                            </div>
+                        </div>
+                        <div style="margin-top: 0.75rem; color: ${isOut ? '#b91c1c' : (isLow ? '#d97706' : '#16a34a')}; font-weight: 700; font-size: 0.85rem;">
+                            ${isOut ? 'Warning: Out of Stock' : (isLow ? 'Warning: Low Stock' : 'Stock Normal')}
+                        </div>
+                        <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                            <button class="btn btn-success" style="width: auto; margin-top: 0; padding: 0.5rem 0.9rem;" onclick="updateStack(${book.id}, 1)">+</button>
+                            <button class="btn btn-danger" style="width: auto; margin-top: 0; padding: 0.5rem 0.9rem;" onclick="updateStack(${book.id}, -1)">-</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function render() {
+            if (!currentUser) return;
+
+            renderAccountDetails();
+
+            const totalBooks = inventory.length;
+            const activeLoans = studentLoans.length;
+            const requestCount = borrowRequests.length;
+
+            document.getElementById('mini-books').innerText = totalBooks;
+            document.getElementById('mini-loans').innerText = activeLoans;
+            document.getElementById('mini-requests').innerText = requestCount;
+
+            if (currentUser.role === 'student') {
+                renderStudentBooks();
+                renderBorrowedBooks();
+                renderPopularBooks();
+            } else {
+                renderLibrarianView();
+            }
+        }
+    </script>
+</body>
+</html>
